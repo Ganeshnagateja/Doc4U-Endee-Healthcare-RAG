@@ -1,0 +1,42 @@
+[
+  {
+    "id": "f387b9c6-7e1e-4c57-bf6e-608d07a9556b",
+    "text": "Seek urgent medical care immediately for chest pain, severe breathing difficulty, sudden weakness on one side of the body, severe allergic reaction, fainting, uncontrolled bleeding, seizures, or confusion. A chatbot should not replace emergency services.",
+    "metadata": {
+      "source": "Doc4U verified safety rules",
+      "title": "Emergency red flags",
+      "type": "seed",
+      "user_id": "public"
+    }
+  },
+  {
+    "id": "543c0646-a693-4c0d-922f-e2312e15dc1c",
+    "text": "For mild symptoms, collect duration, severity, age, existing conditions, medicines, allergies, and warning signs before giving general guidance. Suggest rest, hydration, monitoring, and medical consultation when symptoms persist, worsen, or involve high-risk patients.",
+    "metadata": {
+      "source": "Doc4U verified safety rules",
+      "title": "Safe symptom guidance",
+      "type": "seed",
+      "user_id": "public"
+    }
+  },
+  {
+    "id": "0aadf591-f758-4084-a44e-d2f85544f435",
+    "text": "When explaining medical reports, summarize the visible values, explain what high or low markers may generally mean, and advise the user to confirm interpretation with a licensed doctor. Do not give a final diagnosis from one report.",
+    "metadata": {
+      "source": "Doc4U verified safety rules",
+      "title": "Report analysis disclaimer",
+      "type": "seed",
+      "user_id": "public"
+    }
+  },
+  {
+    "id": "74fed69f-a212-4d8e-b752-b583587f05a7",
+    "text": "Prefer retrieved medical context, user-provided report text, and official public health data over generic model memory. Cite retrieved sources in the response when possible and clearly mention uncertainty if the retrieved context is insufficient.",
+    "metadata": {
+      "source": "Doc4U verified safety rules",
+      "title": "RAG answer policy",
+      "type": "seed",
+      "user_id": "public"
+    }
+  }
+]

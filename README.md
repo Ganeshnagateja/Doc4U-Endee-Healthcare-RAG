@@ -1,50 +1,104 @@
-<p align="center">
-  <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
-      <img height="100" alt="Endee" src="docs/assets/logo-dark.svg">
-  </picture>
-</p>
+# Doc4U — Endee-powered AI Healthcare RAG Assistant
 
-<p align="center">
-    <b>High-performance open-source vector database for AI search, RAG, semantic search, and hybrid retrieval.</b>
-</p>
+Doc4U is a Flask-based AI healthcare assistant upgraded for the Endee.io internship project evaluation. The app keeps the existing chatbot UI while adding an Endee vector database retrieval layer for semantic search, RAG, report-aware context retrieval, and source-backed answers.
 
-<p align="center">
-    <a href="./docs/getting-started.md"><img src="https://img.shields.io/badge/Quick_Start-Local_Setup-success?style=flat-square" alt="Quick Start"></a>
-    <a href="https://docs.endee.io/quick-start"><img src="https://img.shields.io/badge/Docs-Quick_Start-success?style=flat-square" alt="Docs"></a>
-    <a href="https://github.com/endee-io/endee/blob/master/LICENSE"><img src="https://img.shields.io/github/license/endee-io/endee?style=flat-square" alt="License"></a>
-    <a href="https://discord.gg/5HFGqDZQE3"><img src="https://img.shields.io/badge/Discord-Join_Chat-5865F2?logo=discord&style=flat-square" alt="Discord"></a>
-    <a href="https://endee.io/"><img src="https://img.shields.io/badge/Website-Endee-111111?style=flat-square" alt="Website"></a>
-    <!-- <a href="https://endee.io/benchmarks"><img src="https://img.shields.io/badge/Benchmarks-Coming_Soon-1F8B4C?style=flat-square" alt="Benchmarks"></a> -->
-    <!-- <a href="https://endee.io/cloud"><img src="https://img.shields.io/badge/Cloud-Coming_Soon-2496ED?style=flat-square" alt="Cloud"></a> -->
-</p>
+## Why this project fits Endee's criteria
 
-<p align="center">
-<strong><a href="./docs/getting-started.md">Quick Start</a> • <a href="#why-endee">Why Endee</a> • <a href="#use-cases">Use Cases</a> • <a href="#features">Features</a> • <a href="#api-and-clients">API and Clients</a> • <a href="#docs-and-links">Docs</a> • <a href="#community-and-contact">Contact</a></strong>
-</p>
+- **Uses Endee Vector Database:** `endee_rag.py` integrates `langchain-endee`, `endee`, and `endee-model` through `EndeeVectorStore`.
+- **Semantic Search:** `/api/rag/search?q=...` retrieves relevant health/report context using vector similarity.
+- **RAG Pipeline:** `/ask_bot` retrieves context from Endee before calling Gemini, then injects that context into the model prompt.
+- **AI-driven Application:** The assistant supports health Q&A, report/PDF analysis, image input, saved chat history, WHO vaccination data, and outbreak alerts.
+- **Production-style System:** JWT auth, bcrypt password hashing, MongoDB persistence, environment-based config, modular RAG service, API endpoints, and a clear setup guide.
 
-# Endee: Open-Source Vector Database for AI Search
+## Main features
 
-**Endee** is a high-performance open-source vector database built for AI search and retrieval workloads. It is designed for teams building **RAG pipelines**, **semantic search**, **hybrid search**, recommendation systems, and filtered vector retrieval APIs that need production-oriented performance and control.
+1. **Endee RAG chat** — user messages are enriched with retrieved context before Gemini generates an answer.
+2. **PDF report ingestion** — uploaded PDFs are extracted, chunked, embedded, and indexed for future semantic retrieval.
+3. **Manual knowledge ingestion** — authenticated users can add text notes to the retrieval layer using `/api/rag/ingest-text`.
+4. **Semantic search endpoint** — search the indexed medical/report knowledge directly.
+5. **Source citations** — bot responses return source metadata that the UI displays under answers.
+6. **Healthcare safety prompt** — responses avoid final diagnosis claims and mention emergency red flags when relevant.
+7. **WHO APIs** — existing vaccine coverage and disease alert endpoints are preserved.
 
-Endee combines vector search with filtering, sparse retrieval support, backup workflows, and deployment flexibility across local builds and Docker-based environments. The project is implemented in C++ and optimized for modern CPU targets, including AVX2, AVX512, NEON, and SVE2.
+## System design
 
-If you want the fastest path to evaluate Endee locally, start with the [Getting Started guide](./docs/getting-started.md) or the hosted docs at [docs.endee.io](https://docs.endee.io/quick-start).
+```text
+User Browser
+   |
+   | HTML/CSS/JS UI
+   v
+Flask Backend
+   |-- JWT + bcrypt authentication
+   |-- MongoDB users and chat history
+   |-- PDF/image handling
+   |-- WHO vaccine + outbreak APIs
+   |
+   | RAG path
+   v
+endee_rag.py
+   |-- chunk uploaded/seed text
+   |-- embed with all-MiniLM-L6-v2
+   |-- store/search vectors in Endee
+   |-- fallback lexical retriever only for demo resilience
+   v
+Gemini Model
+   |
+   v
+Answer + citations returned to UI
+```
 
-## Why Endee
+## Project structure
 
-- Built as a dedicated vector database for AI applications, search systems, and retrieval-heavy workloads.
-- Supports dense vector retrieval plus sparse search capabilities for hybrid search use cases.
-- Includes payload filtering for metadata-aware retrieval and application-specific query logic.
-- Ships with operational features already documented in this repo, including backup flows and runtime observability.
-- Offers flexible deployment paths: local scripts, manual builds, Docker images, and prebuilt registry images.
+```text
+.
+├── app.py                         # Flask backend and API routes
+├── endee_rag.py                   # Endee vector DB integration and RAG service
+├── chatbot.html                   # Existing chatbot UI, citation display already supported
+├── login.html                     # Login/signup UI
+├── data/medical_knowledge_seed.json # Default safety/RAG seed knowledge
+├── requirements.txt               # Python dependencies including Endee integration
+├── .env.example                   # Safe environment variable template
+├── scripts/run_local.sh           # Local setup helper
+├── tests/test_endee_rag.py        # Basic retrieval utility tests
+└── SUBMISSION_CHECKLIST.md        # Endee internship submission checklist
+```
 
-## Getting Started
+## Setup
 
-The full installation, build, Docker, runtime, and authentication instructions are in [docs/getting-started.md](./docs/getting-started.md).
+### 1. Fork and star Endee
 
-Fastest local path:
+The internship description requires you to star and fork the official repository:
+
+- Official repo: `https://github.com/endee-io/endee`
+- Star it from your GitHub account.
+- Fork it to your GitHub account.
+- Put this project inside your fork or push this upgraded app to the fork you will submit.
+
+### 2. Create environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```bash
+MONGO_URI=mongodb://localhost:27017/doc4u
+GOOGLE_API_KEY=your_gemini_key
+JWT_SECRET_KEY=your_long_secret
+ENDEE_ENABLED=true
+ENDEE_INDEX_NAME=doc4u_health_index
+ENDEE_DIMENSION=384
+ENDEE_API_TOKEN=                # keep empty for local Endee, add token for Endee Cloud
+```
+
+### 3. Run Endee
+
+Use the official Endee repo setup. The current Endee README says the fastest local path is:
 
 ```bash
 chmod +x ./install.sh ./run.sh
@@ -52,88 +106,75 @@ chmod +x ./install.sh ./run.sh
 ./run.sh
 ```
 
-The server listens on port `8080`. For detailed setup paths, supported operating systems, CPU optimization flags, Docker usage, and authentication examples, use:
+The Endee server listens on port `8080` by default. If you use Endee Cloud, set `ENDEE_API_TOKEN` in `.env`.
 
-- [Getting Started](./docs/getting-started.md)
-- [Hosted Quick Start Docs](https://docs.endee.io/quick-start)
+### 4. Run MongoDB
 
-## Use Cases
+Local MongoDB example:
 
-### RAG and AI Retrieval
+```bash
+mongod --dbpath ./mongo-data
+```
 
-Use Endee as the retrieval layer for question answering, chat assistants, copilots, and other RAG applications that need fast vector search with metadata-aware filtering.
+Or use MongoDB Atlas and paste the URI in `.env`.
 
-### Agentic AI and AI Agent Memory
+### 5. Start the app
 
-Use Endee as the long-term memory and context retrieval layer for AI agents built with frameworks like LangChain, CrewAI, AutoGen, and LlamaIndex. Store and retrieve past observations, tool outputs, conversation history, and domain knowledge mid-execution with low-latency filtered vector search, so your autonomous agents get the right context without stalling their reasoning loop.
+```bash
+python app.py
+```
 
-### Semantic Search
+Open:
 
-Build semantic search experiences for documents, products, support content, and knowledge bases using vector similarity search instead of exact keyword-only matching.
+```text
+http://localhost:3000
+```
 
-### Hybrid Search
+## API endpoints to demonstrate
 
-Combine dense retrieval, sparse vectors, and filtering to improve relevance for search workflows where both semantic understanding and term-level precision matter.
+### Endee status
 
-### Recommendations and Matching
+```bash
+curl http://localhost:3000/api/endee/status
+```
 
-Support recommendation, similarity matching, and nearest-neighbor retrieval workflows across text, embeddings, and other high-dimensional representations.
+### Ingest custom text into Endee
 
-## Features
+```bash
+curl -X POST http://localhost:3000/api/rag/ingest-text \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Fever care note","text":"For mild fever, monitor temperature, hydrate, and seek care if symptoms worsen."}'
+```
 
-- **Vector search** for AI retrieval and semantic similarity workloads.
-- **Hybrid retrieval support** with sparse vector capabilities documented in [docs/sparse.md](./docs/sparse.md).
-- **Payload filtering** for structured retrieval logic documented in [docs/filter.md](./docs/filter.md).
-- **Backup APIs and flows** documented in [docs/backup-system.md](./docs/backup-system.md).
-- **Operational logging and instrumentation** documented in [docs/logs.md](./docs/logs.md) and [docs/mdbx-instrumentation.md](./docs/mdbx-instrumentation.md).
-- **CPU-targeted builds** for AVX2, AVX512, NEON, and SVE2 deployments.
-- **Docker deployment options** for local and server environments.
+### Semantic search
 
-## API and Clients
+```bash
+curl "http://localhost:3000/api/rag/search?q=fever%20hydration&top_k=4" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
 
-Endee exposes an HTTP API for managing indexes and serving retrieval workloads. The current repo documentation and examples focus on running the server directly and calling its API endpoints.
+### RAG chat
 
-Current developer entry points:
+Use the UI or call `/ask_bot`. The backend retrieves relevant Endee context first, then calls Gemini.
 
-- [Getting Started](./docs/getting-started.md) for local build and run flows
-- [Hosted Docs](https://docs.endee.io/quick-start) for product documentation
-- [Release Notes 1.0.0](https://github.com/endee-io/endee/releases/tag/1.0.0) for recent platform changes
+## What was upgraded from the original project
 
-## Docs and Links
+| Area | Before | Upgraded version |
+|---|---|---|
+| Vector DB | Not present | Endee VectorStore integration |
+| RAG | Generic Gemini chat | Retrieval-augmented Gemini responses |
+| Semantic search | Not present | `/api/rag/search` endpoint |
+| Document memory | Files saved in chat history | PDF text chunked and indexed for future retrieval |
+| Citations | UI support existed | Backend now returns retrieved source metadata |
+| Evaluation readiness | Healthcare chatbot only | Endee-focused AI/ML project with README, design, setup, and APIs |
 
-- [Getting Started](./docs/getting-started.md)
-- [Hosted Documentation](https://docs.endee.io/quick-start)
-- [Release Notes](https://github.com/endee-io/endee/releases/tag/1.0.0)
-- [Sparse Search](./docs/sparse.md)
-- [Filtering](./docs/filter.md)
-- [Backups](./docs/backup-system.md)
+## Notes for evaluators
 
-## Community and Contact
+- `endee_rag.py` is the core Endee integration file.
+- The fallback retriever exists only to keep the demo usable when Endee is not running on the evaluator's machine. The project still includes the real Endee integration and dependencies.
+- For full evaluation, run Endee locally or configure Endee Cloud before starting the Flask app.
 
-- Join the community on [Discord](https://discord.gg/5HFGqDZQE3)
-- Visit the website at [endee.io](https://endee.io/)
-- For trademark or branding permissions, contact [enterprise@endee.io](mailto:enterprise@endee.io)
+## Safety disclaimer
 
-## Contributing
-
-We welcome contributions from the community to help make vector search faster and more accessible for everyone.
-
-- Submit pull requests for fixes, features, and improvements
-- Report bugs or performance issues through GitHub issues
-- Propose enhancements for search quality, performance, and deployment workflows
-
-## License
-
-Endee is open source software licensed under the **Apache License 2.0**. See the [LICENSE](./LICENSE) file for full terms.
-
-## Trademark and Branding
-
-“Endee” and the Endee logo are trademarks of Endee Labs.
-
-The Apache License 2.0 does not grant permission to use the Endee name, logos, or branding in a way that suggests endorsement or affiliation.
-
-If you offer a hosted or managed service based on this software, you must use your own branding and avoid implying it is an official Endee service.
-
-## Third-Party Software
-
-This project includes or depends on third-party software components licensed under their respective open-source licenses. Use of those components is governed by their own license terms.
+Doc4U provides general health information and report explanations. It is not a replacement for a licensed doctor, emergency care, or clinical diagnosis.
