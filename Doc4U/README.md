@@ -2,6 +2,13 @@
 
 Doc4U is a Flask-based AI healthcare assistant upgraded for the Endee.io internship project evaluation. The app keeps the existing chatbot UI while adding an Endee vector database retrieval layer for semantic search, RAG, report-aware context retrieval, and source-backed answers.
 
+This repository is forked from the official Endee repository as required for the Endee.io project-based internship evaluation.
+
+The actual AI healthcare chatbot project is inside:
+
+`Doc4U/`
+
+It contains the Flask backend, Gemini integration, Endee RAG layer, semantic search APIs, frontend pages, setup instructions, and deployment files.
 ## Why this project fits Endee's criteria
 
 - **Uses Endee Vector Database:** `endee_rag.py` integrates `langchain-endee`, `endee`, and `endee-model` through `EndeeVectorStore`.
