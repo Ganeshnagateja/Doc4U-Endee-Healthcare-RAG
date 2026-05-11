@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doc4U - Your AI Health Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/franc@6.1.0/index.min.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+      /* --- (All your <style> content is identical) --- */
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body { font-family: 'Inter', sans-serif; background: #111827; }
+      .message-user { background: #4f46e5; color: white; border-radius: 12px; border-bottom-right-radius: 4px; }
+      .message-bot { background: #374151; color: #f3f4f6; border-radius: 12px; border-bottom-left-radius: 4px; }
+      .typing-indicator { display: none; }
+      .typing-indicator.active { display: flex; }
+      .typing-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #9ca3af; animation: typing 1.4s infinite ease-in-out; }
+      .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+      .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+      @keyframes typing { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+      .online-indicator { animation: pulse 2s infinite; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+      .message-time { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+      .quick-reply { background: #1f2937; border: 1px solid #374151; color: #e9edef; transition: all 0.2s ease; }
+      .quick-reply:hover { background: #374151; border-color: #4b5563; }
+      .feature-card { background: #1f2937; border: 1px solid #374151; transition: all 0.2s ease-in-out; }
+      .feature-card:hover { transform: translateY(-4px); border-color: #4f46e5; }
+      #micButton.listening { color: #ef4444; animation: pulse-mic 1.5s infinite; }
+      @keyframes pulse-mic { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+      .speak-icon { cursor: pointer; color: #9ca3af; font-size: 0.9rem; opacity: 0.7; transition: all 0.2s ease; margin-left: 8px; }
+      .speak-icon:hover { opacity: 1; color: #f9fafb; }
+      .message-bot ul, .message-bot ol { padding-left: 20px; margin-top: 8px; margin-bottom: 8px; }
+      .message-bot li { margin-bottom: 4px; }
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #1f2937; }
+      ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+      .file-download-link {
+        display: block;
+        padding: 8px 12px;
+        margin-top: 8px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+      .file-download-link:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+      
+      /* --- NEW: Style for the citations --- */
+      .citations-container {
+        margin-top: 12px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .citations-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #9ca3af; /* gray-400 */
+      }
+      .citations-container ul {
+        list-style-type: decimal;
+        padding-left: 16px;
+        margin-top: 4px;
+      }
+      .citations-container li {
+        font-size: 0.75rem;
+        margin-bottom: 2px;
+        /* Allow long links to break */
+        word-break: break-all;
+      }
+      .citations-container a {
+        color: #93c5fd; /* blue-300 */
+        text-decoration: none;
+      }
+      .citations-container a:hover {
+        text-decoration: underline;
+      }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-900 text-gray-200">
+    
+    <!-- (All HTML is identical, no changes) -->
+    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-user-md text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Doc4U</h1>
+                        <p class="text-gray-400 text-sm">Your Personal AI Health Assistant</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="welcome-message" class="text-gray-300">Welcome, Guest</span>
+                    <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-semibold">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <div class="grid lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1 space-y-6">
+                <!-- ... About Doc4U ... -->
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-3">About Doc4U</h2>
+                    <p class="text-gray-400 leading-relaxed">
+                        This is an interactive demonstration of <strong>Doc4U</strong>, an AI-powered chatbot. 
+                        Powered by Google's advanced Large Language Models, it's designed to 
+                        understand your health questions and provide clear, conversational, and 
+                        helpful information instantly.
+                    </p>
+                </div>
+                <!-- ... Key Features ... -->
+                <div>
+                    <h3 class="text-xl font-semibold text-white mb-4">Key Features</h3>
+                    <div class="space-y-4">
+                        <div class="feature-card rounded-xl p-4 text-white">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center"><i class="fas fa-brain text-lg"></i></div>
+                                <div>
+                                    <h3 class="font-semibold text-sm">AI-Powered Answers</h3>
+                                    <p class="text-xs text-gray-400">Uses Google's LLM for smart replies</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="feature-card rounded-xl p-4 text-white">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center"><i class="fas fa-microphone-alt text-lg"></i></div>
+                                <div>
+                                    <h3 class="font-semibold text-sm">Voice Enabled</h3>
+                                    <p class="text-xs text-gray-400">Speak questions, hear replies</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="feature-card rounded-xl p-4 text-white">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center"><i class="fas fa-globe text-lg"></i></div>
+                                <div>
+                                    <h3 class="font-semibold text-sm">Multi-Language</h3>
+                                    <p class="text-xs text-gray-400">Understands Hindi, English & more</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ... Disclaimer ... -->
+                <div class="bg-yellow-900/40 border border-yellow-700 rounded-xl p-4 text-yellow-200">
+                    <h3 class="font-semibold mb-2 text-sm flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Important Disclaimer
+                    </h3>
+                    <p class="text-xs leading-normal">
+                        Doc4U is an AI assistant and not a replacement for a real doctor. 
+                        Please consult a qualified healthcare professional for any medical diagnosis or emergency.
+                    </p>
+                </div>
+            </div>
+
+            <!-- ... Chat Window ... -->
+            <div class="lg:col-span-2">
+                <div class="bg-gray-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[700px]">
+                    <!-- ... Chat Header ... -->
+                    <div class="bg-gray-700 p-4 flex items-center justify-between border-b border-gray-600">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full flex items-center justify-center relative">
+                                <i class="fas fa-robot text-white"></i>
+                                <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-700 online-indicator"></div>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-semibold">Doc4U Health Assistant</h3>
+                                <span class="text-xs text-gray-400">online</span>
+                            </div>
+                        </div>
+                        <button onclick="startNewChat()" class="text-gray-400 hover:text-white" aria-label="Start New Chat" title="Start New Chat">
+                            <i class="fas fa-redo-alt"></i> 
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-900 flex-1 overflow-y-auto p-4 space-y-4" id="chatMessages"></div>
+                    <div id="typingIndicator" class="typing-indicator px-4 pb-2">
+                        <div class="flex items-start space-x-2">
+                            <div class="message-bot p-3">
+                                <div class="flex space-x-1">
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-3 border-t border-gray-700 pt-3">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="sendQuickMessage('I have fever')" class="quick-reply px-3 py-1 rounded-full text-xs">🤒 Fever</button>
+                            <button onclick="sendQuickMessage('Headache problem')" class="quick-reply px-3 py-1 rounded-full text-xs">🤕 Headache</button>
+                            <button onclick="sendQuickMessage('What is Paracetamol?')" class="quick-reply px-3 py-1 rounded-full text-xs">💊 Paracetamol</button>
+                            <button onclick="sendQuickMessage('Symptoms of cold')" class="quick-reply px-3 py-1 rounded-full text-xs">🤧 Cold Symptoms</button>
+                            <button onclick="sendQuickMessage('Analyze this report', true)" class="quick-reply px-3 py-1 rounded-full text-xs">📄 Analyze Report</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-700 p-4 flex items-center space-x-3">
+                        <label for="fileInput" class="w-10 h-10 text-gray-400 hover:text-white rounded-full flex items-center justify-center cursor-pointer" title="Attach file">
+                            <i class="fas fa-paperclip text-xl"></i>
+                            <input type="file" id="fileInput" class="hidden" accept=".pdf,image/png,image/jpeg,image/gif" title="Attach a file (PDF, PNG, JPEG, GIF)" placeholder="Choose a file to upload">
+                        </label>
+                        <div class="flex-1 relative">
+                            <input type="text" id="messageInput" placeholder="Type your health question or attach a file..." class="w-full px-4 py-2 bg-gray-600 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400" onkeypress="handleKeyPress(event)">
+                        </div>
+                        <button id="micButton" onclick="startRecognition()" class="w-10 h-10 text-gray-400 hover:text-white rounded-full flex items-center justify-center transition-colors" aria-label="Ask with voice" title="Ask with voice">
+                            <i class="fas fa-microphone text-xl"></i>
+                        </button>
+                        <button onclick="sendMessage()" class="w-10 h-10 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full flex items-center justify-center transition-colors" aria-label="Send message" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Element References (Unchanged) ---
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const micButton = document.getElementById('micButton');
+        const fileInput = document.getElementById('fileInput');
+
+        // --- 2. State Variables (Unchanged) ---
+        let isListening = false;
+        let currentlySpeakingButton = null;
+        let speechVoices = []; 
+        let attachedFile = null;
+
+        // --- 3. Session & Auth Functions (Unchanged) ---
+        function handleAuthError() {
+            alert("Your session has expired or is invalid. Please log in again.");
+            localStorage.removeItem('doc4u_user_name');
+            localStorage.removeItem('doc4u_token'); 
+            localStorage.removeItem('doc4u_session_id');
+            window.location.href = '/'; 
+        }
+        async function startNewChat() {
+            if (confirm("Are you sure you want to start a new chat? This will permanently delete your current conversation history from your account.")) {
+                const token = localStorage.getItem('doc4u_token');
+                if (!token) { handleAuthError(); return; }
+                try {
+                    const response = await fetch('/clear_history', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.status === 401) { handleAuthError(); return; }
+                    if (!response.ok) { throw new Error('Server failed to clear history.'); }
+                    chatMessages.innerHTML = ''; 
+                    addWelcomeMessage(); 
+                    console.log("Chat history cleared from server.");
+                } catch (error) {
+                    console.error('Error clearing chat history:', error);
+                    alert('Could not clear chat history. Please try again.');
+                }
+            }
+        }
+        function logout() {
+            if (confirm("Are you sure you want to log out?")) {
+                localStorage.removeItem('doc4u_user_name'); 
+                localStorage.removeItem('doc4u_token'); 
+                window.location.href = '/'; 
+            }
+        }
+        
+        // --- 4. Welcome Message (Unchanged) ---
+        const rawWelcomeText = "Welcome to Doc4U! I'm your AI healthcare assistant. How can I help you today? You can ask me about symptoms, health advice, or medication. You can also use the microphone to ask your question. You can also upload images of reports or PDF documents for analysis.";
+        const formattedWelcomeText = marked.parse("🏥 Welcome to **Doc4U**!\n\nI'm your AI healthcare assistant. How can I help you today?\n\nYou can ask me about symptoms, health advice, or medication. You can also use the microphone to ask your question. You can also upload images of reports or PDF documents for analysis. 📄🔬");
+        function addWelcomeMessage() {
+            const initialTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const welcomeDiv = document.createElement('div');
+            welcomeDiv.className = 'flex items-start space-x-2';
+            welcomeDiv.setAttribute('data-raw-text', rawWelcomeText); 
+            welcomeDiv.innerHTML = `
+                <div class="message-bot p-3 max-w-md">
+                    <div class="text-sm whitespace-pre-line message-text">${formattedWelcomeText}</div>
+                    <div class="flex items-center">
+                        <div class="message-time">${initialTime}</div>
+                        <button onclick="speakMessage(this)" class="speak-icon" aria-label="Read message aloud" title="Read message aloud">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(welcomeDiv); 
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+
+        // --- 5. File Input Listener (Unchanged) ---
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            const existingFileNameDisplay = document.getElementById('attachedFileName');
+            if (existingFileNameDisplay) { existingFileNameDisplay.remove(); }
+            if (file) {
+                if (file.size > 15 * 1024 * 1024) { // 15MB check (leaving 1MB buffer)
+                    alert("File is too large! Please upload files smaller than 15MB.");
+                    fileInput.value = ''; // Clear the input
+                    return;
+                }
+                attachedFile = file;
+                const fileNameDisplay = document.createElement('span');
+                fileNameDisplay.id = 'attachedFileName';
+                fileNameDisplay.className = 'absolute left-4 top-1/2 -translate-y-1/2 max-w-[70%] truncate text-sm text-gray-300 bg-gray-500 px-2 py-0.5 rounded-full';
+                fileNameDisplay.textContent = file.name;
+                messageInput.parentNode.appendChild(fileNameDisplay);
+                messageInput.placeholder = "Add a comment for your file..."; 
+            } else {
+                attachedFile = null;
+                messageInput.placeholder = "Type your health question or attach a file..."; 
+            }
+        });
+
+        // --- 6. Speech Recognition (Unchanged) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = navigator.language || 'en-US'; 
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            recognition.onstart = () => { isListening = true; micButton.classList.add('listening'); };
+            recognition.onresult = (event) => {
+                messageInput.value = event.results[0][0].transcript;
+                sendMessage();
+            };
+            recognition.onerror = (event) => {
+                isListening = false;
+                micButton.classList.remove('listening');
+                console.error('Speech recognition error:', event.error, event.message);
+                if (event.error === 'not-allowed') {
+                    alert('Microphone access denied. Please allow microphone permissions.');
+                }
+            };
+            recognition.onend = () => { isListening = false; micButton.classList.remove('listening'); };
+        } else {
+            console.warn('Speech Recognition not supported in this browser.');
+            micButton.style.display = 'none';
+        }
+        
+        function startRecognition() {
+            if (!recognition) return;
+            primeAudio(); // Prime on mic click
+            if (isListening) { recognition.stop(); } else { recognition.start(); }
+        }
+
+        // --- 7. Speech Synthesis (Unchanged) ---
+        function loadVoices() {
+            speechVoices = window.speechSynthesis.getVoices();
+        }
+        if (window.speechSynthesis) {
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+            loadVoices();
+        }
+        function mapFrancToBcp47(francCode) {
+            const mapping = {
+                'eng': 'en-US', 'hin': 'hi-IN', 'tel': 'te-IN', 'tam': 'ta-IN', 'pan': 'pa-IN',
+                'guj': 'gu-IN', 'mar': 'mr-IN', 'ben': 'bn-IN', 'kan': 'kn-IN', 'mal': 'ml-IN',
+                'spa': 'es-ES', 'fra': 'fr-FR', 'deu': 'de-DE', 'rus': 'ru-RU', 'zho': 'zh-CN',
+                'jpn': 'ja-JP', 'kor': 'ko-KR', 'ara': 'ar-SA', 'por': 'pt-BR', 'ita': 'it-IT'
+            };
+            return mapping[francCode] || 'en-US'; 
+        }
+        function speakMessage(buttonElement) {
+            if (!window.speechSynthesis) { return; }
+            if (speechVoices.length === 0) { setTimeout(() => speakMessage(buttonElement), 200); return; }
+            const icon = buttonElement.querySelector('i');
+            const isCurrentlySpeakingThis = (currentlySpeakingButton === buttonElement);
+            if (isCurrentlySpeakingThis) {
+                window.speechSynthesis.cancel();
+                icon.classList.replace('fa-stop-circle', 'fa-volume-up');
+                currentlySpeakingButton = null;
+                return;
+            }
+            if (currentlySpeakingButton) {
+                window.speechSynthesis.cancel();
+                currentlySpeakingButton.querySelector('i').classList.replace('fa-stop-circle', 'fa-volume-up');
+                currentlySpeakingButton = null;
+            }
+            const textToSpeak = buttonElement.closest('[data-raw-text]').getAttribute('data-raw-text');
+            if (!textToSpeak) { return; }
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            const detectedFrancCode = franc(textToSpeak, { minLength: 10, whitelist: ['eng', 'hin', 'spa', 'fra', 'deu', 'rus', 'zho'] });
+            const detectedBcp47 = mapFrancToBcp47(detectedFrancCode);
+            utterance.lang = detectedBcp47;
+            const preferredVoice = speechVoices.find(voice => voice.lang === detectedBcp47 || voice.lang.startsWith(detectedBcp47.substring(0,2)));
+            if (preferredVoice) { utterance.voice = preferredVoice; }
+            utterance.onstart = () => {
+                icon.classList.replace('fa-volume-up', 'fa-stop-circle');
+                currentlySpeakingButton = buttonElement;
+            };
+            utterance.onend = () => {
+                if (currentlySpeakingButton === buttonElement) {
+                    icon.classList.replace('fa-stop-circle', 'fa-volume-up');
+                    currentlySpeakingButton = null;
+                }
+            };
+            utterance.onerror = (e) => {
+                console.error('SpeechSynthesis Utterance Error:', e.error);
+                if (currentlySpeakingButton === buttonElement) {
+                    icon.classList.replace('fa-stop-circle', 'fa-volume-up');
+                    currentlySpeakingButton = null;
+                }
+            };
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- NEW: Audio Priming Function ---
+        function primeAudio() {
+            const primingUtterance = new SpeechSynthesisUtterance("");
+            primingUtterance.volume = 0;
+            window.speechSynthesis.speak(primingUtterance);
+        }
+
+        // --- 8. Core Chat Logic (MODIFIED) ---
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') { 
+                primeAudio(); // Prime on Enter
+                sendMessage(); 
+            }
+        }
+
+        function sendQuickMessage(message, isFileRelated = false) {
+            if (isFileRelated && !attachedFile) {
+                alert("Please attach a file first before clicking 'Analyze Report'.");
+                return;
+            }
+            primeAudio(); // Prime on click
+            messageInput.value = message;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message && !attachedFile) {
+                alert("Please type a message or attach a file.");
+                return;
+            }
+            const token = localStorage.getItem('doc4u_token');
+            if (!token) { handleAuthError(); return; }
+
+            primeAudio(); // Prime on send button click
+
+            addMessage(message, 'user', attachedFile ? attachedFile.name : null); 
+            
+            messageInput.value = '';
+            const existingFileNameDisplay = document.getElementById('attachedFileName');
+            if (existingFileNameDisplay) { existingFileNameDisplay.remove(); }
+            messageInput.placeholder = "Type your health question or attach a file..."; 
+            showTypingIndicator();
+            window.speechSynthesis.cancel();
+            if (currentlySpeakingButton) {
+                 currentlySpeakingButton.querySelector('i').classList.replace('fa-stop-circle', 'fa-volume-up');
+                 currentlySpeakingButton = null;
+            }
+            
+            const formData = new FormData();
+            formData.append('message', message);
+            if (attachedFile) {
+                formData.append('file', attachedFile);
+            }
+            try {
+                const response = await fetch('/ask_bot', { 
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData, 
+                });
+                if (response.status === 401) { handleAuthError(); return; }
+                if (!response.ok) {
+                    let errorMsg = `Network response was not ok (Status: ${response.status})`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error) { errorMsg = errorData.error; }
+                    } catch (e) { /* Ignore */ }
+                    throw new Error(errorMsg);
+                }
+                const data = await response.json();
+                const botReply = data.reply;
+                // --- NEW: Get citations from response ---
+                const citations = data.citations || [];
+                
+                hideTypingIndicator();
+                // --- MODIFIED: Pass citations to addMessage ---
+                addMessage(botReply, 'bot', null, citations);
+            } catch (error) {
+                console.error('Error fetching response:', error);
+                hideTypingIndicator();
+                addMessage(`❌ Sorry, an error occurred: ${error.message}. Please try again later.`, 'bot');
+            } finally {
+                attachedFile = null;
+                fileInput.value = ''; 
+            }
+        }
+
+        // --- 9. addMessage (MODIFIED) ---
+        function addMessage(message, sender, fileData = null, citations = []) {
+            if (message.startsWith("STATE_:")) { return; }
+            const messageDiv = document.createElement('div');
+            messageDiv.setAttribute('data-raw-text', message); 
+            const currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const formattedMessage = marked.parse(message);
+
+            // --- NEW: Build citations HTML ---
+            let citationsHtml = '';
+            if (citations.length > 0) {
+                citationsHtml = '<div class="citations-container">';
+                citationsHtml += '<span class="citations-title">Sources:</span><ul>';
+                citations.forEach(source => {
+                    citationsHtml += `<li><a href="${source.uri}" target="_blank" rel="noopener noreferrer">${source.title || source.uri}</a></li>`;
+                });
+                citationsHtml += '</ul></div>';
+            }
+
+            if (sender === 'user') {
+                messageDiv.className = 'flex justify-end';
+                let displayedMessage = formattedMessage;
+                let fileHtml = ''; 
+                if (typeof fileData === 'string') {
+                    if (!message && fileData) { 
+                        displayedMessage = `<i class="fas fa-paperclip text-sm mr-1"></i> Uploaded: <strong>${fileData}</strong>`;
+                    } else if (fileData) {
+                        displayedMessage += ` <span class="text-xs text-gray-300 ml-2"><i class="fas fa-paperclip"></i> ${fileData}</span>`;
+                    }
+                } else if (typeof fileData === 'object' && fileData !== null) {
+                    const dataUrl = `data:${fileData.mime_type};base64,${fileData.data}`;
+                    fileHtml = `
+                        <a href="${dataUrl}" download="${fileData.filename}" class="file-download-link">
+                            <i class="fas fa-download mr-2"></i>
+                            ${fileData.filename}
+                        </a>
+                    `;
+                }
+                messageDiv.innerHTML = `
+                    <div class="message-user p-3 max-w-md">
+                        <div class="text-sm whitespace-pre-line message-text">${displayedMessage}</div>
+                        ${fileHtml} 
+                        <div class="text-right message-time">${currentTime}</div>
+                    </div>
+                `;
+            } else { // sender === 'bot'
+                messageDiv.className = 'flex items-start space-x-2';
+                messageDiv.innerHTML = `
+                    <div class="message-bot p-3 max-w-md">
+                        <div class="text-sm whitespace-pre-line message-text">${formattedMessage}</div>
+                        ${citationsHtml} <!-- Add citations here -->
+                        <div class="flex items-center">
+                            <div class="message-time">${currentTime}</div>
+                            <button onclick="speakMessage(this)" class="speak-icon" aria-label="Read message aloud" title="Read message aloud">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // --- NEW: Auto-speak logic ---
+                const speakButton = messageDiv.querySelector('.speak-icon');
+                setTimeout(() => {
+                    speakMessage(speakButton);
+                }, 100); 
+                // --- END NEW ---
+            }
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+
+        function showTypingIndicator() {
+            typingIndicator.classList.add('active');
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+        function hideTypingIndicator() {
+            typingIndicator.classList.remove('active');
+        }
+        
+        // --- 10. loadChatHistory (MODIFIED) ---
+        async function loadChatHistory(token) {
+            chatMessages.innerHTML = ''; 
+            try {
+                const response = await fetch('/get_history', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) { handleAuthError(); return; }
+                const data = await response.json();
+                
+                if (data.history && data.history.length > 0) {
+                    data.history.forEach(item => {
+                        const sender = item.role === 'model' ? 'bot' : 'user';
+                        const message = item.parts[0].text;
+                        const file = item.file || null; 
+                        // --- NEW: Get citations from history ---
+                        const citations = item.citations || [];
+                        // --- MODIFIED: Pass citations to the silent function ---
+                        addMessageWithoutSpeaking(message, sender, file, citations); 
+                    });
+                    console.log("Chat history loaded.");
+                } else {
+                    addWelcomeMessage(); 
+                }
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+                addWelcomeMessage(); 
+            } finally {
+                chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'auto' });
+            }
+        }
+        
+        // --- 11. addMessageWithoutSpeaking (MODIFIED) ---
+        function addMessageWithoutSpeaking(message, sender, fileData = null, citations = []) {
+            if (message.startsWith("STATE_:")) { return; }
+            const messageDiv = document.createElement('div');
+            messageDiv.setAttribute('data-raw-text', message); 
+            const currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const formattedMessage = marked.parse(message);
+
+            // --- NEW: Build citations HTML for history ---
+            let citationsHtml = '';
+            if (citations.length > 0) {
+                citationsHtml = '<div class="citations-container">';
+                citationsHtml += '<span class="citations-title">Sources:</span><ul>';
+                citations.forEach(source => {
+                    citationsHtml += `<li><a href="${source.uri}" target="_blank" rel="noopener noreferrer">${source.title || source.uri}</a></li>`;
+                });
+                citationsHtml += '</ul></div>';
+            }
+
+            if (sender === 'user') {
+                messageDiv.className = 'flex justify-end';
+                let displayedMessage = formattedMessage;
+                let fileHtml = ''; 
+                if (typeof fileData === 'object' && fileData !== null) {
+                    const dataUrl = `data:${fileData.mime_type};base64,${fileData.data}`;
+                    fileHtml = `
+                        <a href="${dataUrl}" download="${fileData.filename}" class="file-download-link">
+                            <i class="fas fa-download mr-2"></i>
+                            ${fileData.filename}
+                        </a>
+                    `;
+                }
+                messageDiv.innerHTML = `
+                    <div class="message-user p-3 max-w-md">
+                        <div class="text-sm whitespace-pre-line message-text">${displayedMessage}</div>
+                        ${fileHtml} 
+                        <div class="text-right message-time">${currentTime}</div>
+                    </div>
+                `;
+            } else { // sender === 'bot'
+                messageDiv.className = 'flex items-start space-x-2';
+                messageDiv.innerHTML = `
+                    <div class="message-bot p-3 max-w-md">
+                        <div class="text-sm whitespace-pre-line message-text">${formattedMessage}</div>
+                        ${citationsHtml} <!-- Add citations here -->
+                        <div class="flex items-center">
+                            <div class="message-time">${currentTime}</div>
+                            <button onclick="speakMessage(this)" class="speak-icon" aria-label="Read message aloud" title="Read message aloud">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            chatMessages.appendChild(messageDiv);
+        }
+
+        // --- 12. Page Initialization (Unchanged) ---
+        document.addEventListener('DOMContentLoaded', async function() { 
+            const token = localStorage.getItem('doc4u_token');
+            const userName = localStorage.getItem('doc4u_user_name');
+            if (!token) {
+                alert("You are not logged in. Redirecting to login page.");
+                window.location.href = '/'; 
+                return; 
+            }
+            const welcomeMessage = document.getElementById('welcome-message');
+            if (welcomeMessage && userName) {
+                welcomeMessage.textContent = `Welcome, ${userName}`;
+            } else if (welcomeMessage) {
+                welcomeMessage.textContent = `Welcome!`; 
+            }
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => logout());
+            }
+            await loadChatHistory(token);
+        });
+    </script>
+</body>
+</html>

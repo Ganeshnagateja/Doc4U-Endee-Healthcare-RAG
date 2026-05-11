@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Emergency red flags",
+    "source": "Doc4U verified safety rules",
+    "text": "Seek urgent medical care immediately for chest pain, severe breathing difficulty, sudden weakness on one side of the body, severe allergic reaction, fainting, uncontrolled bleeding, seizures, or confusion. A chatbot should not replace emergency services."
+  },
+  {
+    "title": "Safe symptom guidance",
+    "source": "Doc4U verified safety rules",
+    "text": "For mild symptoms, collect duration, severity, age, existing conditions, medicines, allergies, and warning signs before giving general guidance. Suggest rest, hydration, monitoring, and medical consultation when symptoms persist, worsen, or involve high-risk patients."
+  },
+  {
+    "title": "Report analysis disclaimer",
+    "source": "Doc4U verified safety rules",
+    "text": "When explaining medical reports, summarize the visible values, explain what high or low markers may generally mean, and advise the user to confirm interpretation with a licensed doctor. Do not give a final diagnosis from one report."
+  },
+  {
+    "title": "RAG answer policy",
+    "source": "Doc4U verified safety rules",
+    "text": "Prefer retrieved medical context, user-provided report text, and official public health data over generic model memory. Cite retrieved sources in the response when possible and clearly mention uncertainty if the retrieved context is insufficient."
+  }
+]
