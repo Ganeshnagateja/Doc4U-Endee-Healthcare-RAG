@@ -105,6 +105,17 @@ chmod +x ./install.sh ./run.sh
 ./install.sh --release --avx2
 ./run.sh
 ```
+### Run Endee Vector Database
+Using Docker:
+
+```bash
+docker run -d \
+  --name endee-server \
+  --ulimit nofile=100000:100000 \
+  -p 8080:8080 \
+  -v "$PWD/endee-data:/data" \
+  endeeio/endee-server:latest
+```
 
 The Endee server listens on port `8080` by default. If you use Endee Cloud, set `ENDEE_API_TOKEN` in `.env`.
 
@@ -117,18 +128,6 @@ mongod --dbpath ./mongo-data
 ```
 
 Or use MongoDB Atlas and paste the URI in `.env`.
-
-### Run Endee Vector Database
-Using Docker:
-
-```bash
-docker run -d \
-  --name endee-server \
-  --ulimit nofile=100000:100000 \
-  -p 8080:8080 \
-  -v "$PWD/endee-data:/data" \
-  endeeio/endee-server:latest
-```
 
 ### 5. Start the app
 
