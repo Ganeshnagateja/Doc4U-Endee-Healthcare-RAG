@@ -118,6 +118,18 @@ mongod --dbpath ./mongo-data
 
 Or use MongoDB Atlas and paste the URI in `.env`.
 
+### Run Endee Vector Database
+Using Docker:
+
+```bash
+docker run -d \
+  --name endee-server \
+  --ulimit nofile=100000:100000 \
+  -p 8080:8080 \
+  -v "$PWD/endee-data:/data" \
+  endeeio/endee-server:latest
+```
+
 ### 5. Start the app
 
 ```bash
