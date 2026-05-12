@@ -211,7 +211,7 @@ def ask_bot(current_user):
         if file.mimetype == 'application/pdf':
             pdf_text = extract_pdf_text(file_bytes)
             if pdf_text:
-                user_content_parts.append(f"Context from attached PDF:\n{pdf_text}")
+                user_content_parts.append(f"Context from attached PDF:\n{pdf_text[:3000]}")
 
         elif file.mimetype in ['image/jpeg', 'image/png', 'image/gif']:
             image_part = {
@@ -241,7 +241,7 @@ def ask_bot(current_user):
 
     if message:
         try:
-            retrieved_contexts = rag_service.search(message, user_id=str(user_id), k=4)
+            retrieved_contexts = rag_service.search(message, user_id=str(user_id), k=2)
         except Exception as e:
             print(f"Endee search warning: {e}")
             retrieved_contexts = []
@@ -250,7 +250,7 @@ def ask_bot(current_user):
 
         if retrieved_contexts:
             rag_context = "\n\n".join([
-                f"Source {idx + 1}: {ctx.title} ({ctx.source})\n{ctx.text}"
+                f"Source {idx + 1}: {ctx.title} ({ctx.source})\n{ctx.text[:700]}"
                 for idx, ctx in enumerate(retrieved_contexts)
             ])
 
@@ -326,7 +326,8 @@ If the uploaded file is not healthcare-related, politely say:
 
     # 4. Call Gemini API.
     try:
-        chat = model.start_chat(history=history_for_api)
+        recent_history = history_for_api[-6:]
+        chat = model.start_chat(history=recent_history)
         response = chat.send_message(user_content_parts)
         bot_reply = response.text
     except Exception as e:
